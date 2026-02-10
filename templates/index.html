@@ -800,17 +800,23 @@
             }
         }
 
+        /* --- Responsive Design --- */
         @media (max-width: 768px) {
+            :root {
+                --card-w: 100%;
+            }
+
             .navbar {
                 flex-wrap: wrap;
                 height: auto;
-                padding-bottom: 10px;
+                padding: 12px 20px;
             }
 
             .navbar .search-controls {
                 margin-left: 0;
                 width: 100%;
-                margin-top: 10px;
+                margin-top: 12px;
+                padding-bottom: 4px;
                 order: 3;
             }
 
@@ -818,6 +824,7 @@
                 flex-direction: column;
                 width: 100%;
                 align-items: stretch;
+                padding: 24px;
             }
 
             .form-control {
@@ -826,6 +833,96 @@
 
             .event-grid {
                 grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .hero-logo-text {
+                font-size: 48px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .navbar {
+                padding: 12px 16px;
+            }
+
+            .brand-container {
+                gap: 8px;
+            }
+
+            .navbar-brand {
+                font-size: 18px;
+            }
+
+            .header-section {
+                min-height: 60vh;
+                padding: 0 16px;
+            }
+
+            .hero-logo-container {
+                flex-direction: column;
+                gap: 16px;
+                margin-bottom: 32px;
+                text-align: center;
+            }
+
+            .hero-logo-box {
+                width: 64px;
+                height: 64px;
+                border-radius: 16px;
+            }
+
+            .hero-logo-iris {
+                width: 32px;
+                height: 32px;
+                border-width: 3px;
+            }
+
+            .hero-logo-iris::after {
+                width: 10px;
+                height: 10px;
+                top: 3px;
+                left: 3px;
+            }
+
+            .hero-logo-text {
+                font-size: 36px;
+            }
+
+            .main-content {
+                padding: 20px 16px 60px;
+            }
+
+            .search-controls {
+                padding: 20px 16px;
+            }
+
+            .form-group label {
+                font-size: 10px;
+            }
+
+            .event-card {
+                padding: 20px;
+                min-height: auto;
+            }
+
+            .event-title {
+                font-size: 20px;
+            }
+
+            .card-footer {
+                flex-direction: column;
+                gap: 12px;
+                align-items: stretch;
+                text-align: center;
+            }
+
+            .rsvp-stat {
+                justify-content: center;
+            }
+
+            .btn-action {
+                text-align: center;
             }
         }
     </style>
@@ -930,7 +1027,11 @@
                 const result = await response.json();
 
                 if (result.status === 'success') {
-                    const allEvents = result.data;
+                    const allEvents = result.data.filter(event => {
+                        if (!event.end_date) return true;
+                        // Compare precise timestamps to filter out ended events
+                        return new Date(event.end_date).getTime() > new Date().getTime();
+                    });
                     const allTags = new Set();
                     allEvents.forEach(e => (e.tags || []).forEach(t => allTags.add(t)));
 
