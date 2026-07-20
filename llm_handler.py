@@ -277,13 +277,14 @@ INPUT:
             "Content-Type": "application/json",
         }
 
-        max_retries = 5
+        max_retries = 1 if IS_VERCEL else 5
+        request_timeout = 20 if IS_VERCEL else 90
         retry_delay = 10  # Start with longer delay for 429
         for attempt in range(max_retries):
             try:
                 await llm_rate_limiter.wait()
                 resp = await client.post(
-                    API_URL, json=payload, headers=headers, timeout=90
+                    API_URL, json=payload, headers=headers, timeout=request_timeout
                 )
                 if resp.status_code == 429:
                     print(
@@ -340,7 +341,14 @@ async def summarize_events(events):
     if not events:
         return events
     if not API_KEY:
-        raise RuntimeError("GEMINI_API_KEY or GOOGLE_API_KEY is not configured.")
+        print("DEBUG: [Analysis] API key missing; using local summary fallback.")
+        for event in events:
+            event["ai_summary"] = build_local_fallback_summary(
+                event.get("description", "")
+            )
+            event["top_reasons"] = []
+            event["tags"] = []
+        return events
 
     total_start = time.time()
 

@@ -61,6 +61,16 @@ def write_json_atomic(path, data):
             os.remove(temp_path)
 
 
+def save_diagnostic_artifact(filename, data):
+    """Persist local diagnostics without making a request depend on disk I/O."""
+    if IS_VERCEL:
+        return
+    try:
+        write_json_atomic(os.path.join(OUTPUTS_DIR, filename), data)
+    except OSError as error:
+        print(f"DEBUG: [Main] Could not save diagnostic artifact {filename}: {error}")
+
+
 templates = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
@@ -123,15 +133,13 @@ async def handle_scrape(
         )
 
         # 5. Save to raw JSON file (Full extracted data)
-        raw_output_path = os.path.join(OUTPUTS_DIR, f"raw_{artifact_stem}.json")
-        write_json_atomic(raw_output_path, all_event_details)
+        save_diagnostic_artifact(f"raw_{artifact_stem}.json", all_event_details)
 
         # 6. Create cleaned_json for diagnostics; the LLM also receives compact metadata.
         cleaned_data = [
             {"id": e["id"], "desc": e["description"]} for e in all_event_details
         ]
-        cleaned_output_path = os.path.join(OUTPUTS_DIR, f"cleaned_{artifact_stem}.json")
-        write_json_atomic(cleaned_output_path, cleaned_data)
+        save_diagnostic_artifact(f"cleaned_{artifact_stem}.json", cleaned_data)
 
         # 7. Summarize with LLM (feeding only id and description data internally)
         print(
@@ -143,11 +151,11 @@ async def handle_scrape(
         print(f"DEBUG: [Analysis] AI analysis completed in {duration:.2f}s")
 
         # Save the final results with summaries
-        final_output_path = os.path.join(OUTPUTS_DIR, f"final_{artifact_stem}.json")
-        write_json_atomic(final_output_path, enriched_events)
+        save_diagnostic_artifact(f"final_{artifact_stem}.json", enriched_events)
 
         # Run Janitor
-        cleanup_old_files()
+        if not IS_VERCEL:
+            cleanup_old_files()
 
         return {"status": "success", "data": enriched_events}
 

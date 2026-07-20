@@ -1738,9 +1738,30 @@
             eventList.replaceChildren();
 
             try {
-                const response = await fetch('/scrape', { method: 'POST', body: new FormData(form) });
+                const response = await fetch(`/scrape?request=${Date.now()}`, {
+                    method: 'POST',
+                    body: new FormData(form),
+                    cache: 'no-store',
+                    headers: { 'Accept': 'application/json' },
+                });
+                const contentType = response.headers.get('content-type') || '';
+                if (!contentType.toLowerCase().includes('application/json')) {
+                    const responseText = await response.text();
+                    throw new Error(
+                        `The server could not process this request (HTTP ${response.status}).` +
+                        (responseText ? ` ${responseText.slice(0, 120)}` : '')
+                    );
+                }
                 const result = await response.json();
-                if (result.status !== 'success') throw new Error(result.message || 'Unknown error occurred.');
+                if (!response.ok || result.status !== 'success') {
+                    const validationDetail = Array.isArray(result.detail)
+                        ? result.detail.map(item => item?.msg).filter(Boolean).join('; ')
+                        : result.detail;
+                    throw new Error(
+                        result.message || validationDetail || result.error ||
+                        `The server could not process this request (HTTP ${response.status}).`
+                    );
+                }
 
                 // The backend already applies the requested inclusive date range.
                 // Keep past/current events when the user explicitly searches those dates.
