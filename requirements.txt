@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+beautifulsoup4
+jinja2
+python-dotenv
+python-multipart
+regex
+httpx
+tzdata
