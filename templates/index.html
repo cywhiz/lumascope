@@ -761,9 +761,9 @@
             font-size: 14px;
             line-height: 1.6;
             color: #d1d1d6;
-            overflow-y: auto;
-            padding-right: 8px;
-            max-height: 180px;
+            overflow: visible;
+            padding-right: 0;
+            max-height: none;
         }
 
         .summary-list {
@@ -784,15 +784,6 @@
             color: var(--accent-blue);
             font-size: 16px;
             line-height: 1.2;
-        }
-
-        .summary-container::-webkit-scrollbar {
-            width: 4px;
-        }
-
-        .summary-container::-webkit-scrollbar-thumb {
-            background: #3a3a3c;
-            border-radius: 4px;
         }
 
         .key-points {
@@ -1198,9 +1189,8 @@
             }
 
             .summary-container {
-                max-height: 156px;
-                padding-right: 5px;
-                overscroll-behavior: contain;
+                max-height: none;
+                padding-right: 0;
             }
 
             .card-footer {
@@ -1425,13 +1415,9 @@
                     hour12: true,
                 }).replace(/^0/, '');
                 const startTime = formatTime(startAt);
-                const endTime = endAt && !Number.isNaN(endAt.getTime()) ? `–${formatTime(endAt)}` : '';
-                const zonePart = new Intl.DateTimeFormat([], {
-                    ...options,
-                    timeZoneName: 'short',
-                }).formatToParts(startAt).find(part => part.type === 'timeZoneName');
-                const zone = zonePart ? ` ${zonePart.value}` : '';
-                return `${startTime}${endTime}${zone}`;
+                return endAt && !Number.isNaN(endAt.getTime())
+                    ? `${startTime}–${formatTime(endAt)}`
+                    : startTime;
             } catch {
                 return startAt.toLocaleTimeString();
             }

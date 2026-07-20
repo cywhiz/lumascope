@@ -24,8 +24,8 @@ if not os.path.exists(LLM_CACHE_DIR):
     os.makedirs(LLM_CACHE_DIR, exist_ok=True)
 
 USE_CACHE = True
-SUMMARY_CACHE_VERSION = 4
-PROMPT_VERSION = "compact-english-v9"
+SUMMARY_CACHE_VERSION = 5
+PROMPT_VERSION = "compact-english-v10"
 EVENTS_PER_BATCH = 10
 MAX_EXCERPT_CHARS = 900
 MAX_DENSE_SCRIPT_EXCERPT_CHARS = 650
@@ -123,7 +123,9 @@ def build_local_fallback_summary(description):
     """Keep event cards useful when the configured LLM account is unavailable."""
     text = re.sub(r"\s+", " ", build_event_excerpt(description)).strip()
     words = text.split()
-    if len(words) <= 50:
+    if len(words) > 40:
+        return " ".join(words[:40]).rstrip(" ,;:-") + "..."
+    if len(words) <= 40:
         return text or "Event details are available on the listing."
     return " ".join(words[:50]).rstrip(" ,;:-") + "…"
 
@@ -235,7 +237,7 @@ async def process_batch_async(client, batch, batch_index, total_batches):
 Format:
 {{
   "ID": {{
-    "s": "One factual English paragraph of at most 50 words.",
+    "s": "One factual English paragraph of at most 40 words.",
     "r": "One factual English Why Attend sentence of at most 30 words.",
     "t": ["lowercase tag", "lowercase tag", "lowercase tag"]
   }}
@@ -249,7 +251,7 @@ Rules:
    based only on explicit value. Do not prefix it with "Why attend:".
 5. Use only supplied information. Ignore URLs, image captions, contacts, payment or
    registration instructions, and repeated boilerplate.
-6. 's' is at most 50 words; 'r' is at most 30 words; 't' has one to three tags.
+6. 's' is at most 40 words; 'r' is at most 30 words; 't' has one to three tags.
 7. Tags are canonical filter keywords, not a list of every word found in the text.
    Choose the smallest useful set of broad, user-understandable categories that
    cover the event. Merge activities with the same audience, purpose, or domain
